@@ -140,15 +140,16 @@ st.markdown(
         }
         .winner-left {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 0.65rem;
+            gap: 0.55rem;
             color: #002654;
             font-weight: 700;
             font-size: 1rem;
         }
         .winner-details {
             color: #334155;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
         }
         .winner-badge {
             display: inline-block;
@@ -158,7 +159,6 @@ st.markdown(
             font-weight: 600;
             background-color: #002654;
             color: #FFFFFF;
-            margin-left: 0.35rem;
         }
         .winner-badge-red {
             background-color: #ED2939;
@@ -192,17 +192,7 @@ st.markdown(
 )
 
 st.markdown(
-    """
-    <div class="tricolor-banner">
-        <div class="tricolor-stripe-blue"></div>
-        <div class="tricolor-stripe-white"></div>
-        <div class="tricolor-stripe-red"></div>
-        <div class="tricolor-content">
-            <h1>🇫🇷 Decentralized Beauty Contest Game</h1>
-            <p>Cryptographic Commit–Reveal Consensus • Target = (2/3) × Class Average</p>
-        </div>
-    </div>
-    """,
+    """<div class="tricolor-banner"><div class="tricolor-stripe-blue"></div><div class="tricolor-stripe-white"></div><div class="tricolor-stripe-red"></div><div class="tricolor-content"><h1>🇫🇷 Decentralized Beauty Contest Game</h1><p>Cryptographic Commit–Reveal Consensus • Target = (2/3) × Class Average</p></div></div>""",
     unsafe_allow_html=True,
 )
 
@@ -400,9 +390,9 @@ def save_output_files(data):
 
 
 def render_top_5_box(top_5: list):
-    """Render a styled text box highlighting the Top 5 winners."""
+    """Render a styled HTML box highlighting the Top 5 winners without code-block indentation."""
     medals = {1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅", 5: "🏅"}
-    items_html = []
+    items = []
     for entry in top_5:
         rank = entry["rank"]
         medal = medals.get(rank, "🏅")
@@ -411,30 +401,28 @@ def render_top_5_box(top_5: list):
         commit_short = escape(str(entry["commit"])[:12]) + "..." if entry["commit"] else "N/A"
         highlight_cls = "winner-item winner-rank-1" if rank == 1 else "winner-item"
 
-        items_html.append(
-            f"""
-            <div class="{highlight_cls}">
-                <div class="winner-left">
-                    <span>{medal} #{rank} — {uid_safe}</span>
-                    <span class="winner-badge">Choice: {entry['number']}</span>
-                    <span class="winner-badge winner-badge-red">Distance: {entry['distance']:.4f}</span>
-                </div>
-                <div class="winner-details">
-                    Commit: <code>{commit_short}</code> &nbsp;|&nbsp; Revealed (UTC): <code>{ts_safe}</code>
-                </div>
-            </div>
-            """
+        # Keep HTML on compact lines without 4+ leading spaces so Markdown never treats it as code
+        item_html = (
+            f'<div class="{highlight_cls}">'
+            f'<div class="winner-left">'
+            f'<span>{medal} #{rank} — {uid_safe}</span>'
+            f'<span class="winner-badge">Choice: {entry["number"]}</span>'
+            f'<span class="winner-badge winner-badge-red">Distance: {entry["distance"]:.4f}</span>'
+            f'</div>'
+            f'<div class="winner-details">'
+            f'Commit: <code>{commit_short}</code> &nbsp;|&nbsp; Revealed (UTC): <code>{ts_safe}</code>'
+            f'</div>'
+            f'</div>'
         )
+        items.append(item_html)
 
-    st.markdown(
-        f"""
-        <div class="winners-box">
-            <div class="winners-box-title">🏆 Top 5 Winners (Closest to Target)</div>
-            {''.join(items_html)}
-        </div>
-        """,
-        unsafe_allow_html=True,
+    box_html = (
+        f'<div class="winners-box">'
+        f'<div class="winners-box-title">🏆 Top 5 Winners (Closest to Target)</div>'
+        f'{"".join(items)}'
+        f'</div>'
     )
+    st.markdown(box_html, unsafe_allow_html=True)
 
 
 # --- PAGES ---
