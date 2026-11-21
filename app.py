@@ -4,6 +4,7 @@ Streamlit frontend for the Decentralized Beauty Contest Game (French Tricolor Th
 Integrates commit_client.py, reveal_client.py, and merge_consensus_from_api.py.
 """
 
+from html import escape
 from statistics import mean
 import pandas as pd
 import requests
@@ -97,6 +98,70 @@ st.markdown(
         }
         div[data-testid="stMetric"]:nth-child(even) {
             border-top-color: var(--fr-red);
+        }
+
+        /* Top 5 Winner Box */
+        .winners-box {
+            background: #FFFFFF;
+            border: 1px solid var(--fr-border);
+            border-left: 6px solid var(--fr-blue);
+            border-right: 6px solid var(--fr-red);
+            border-radius: 12px;
+            padding: 1.1rem 1.3rem;
+            margin: 1rem 0 1.4rem 0;
+            box-shadow: 0 4px 14px rgba(0, 38, 84, 0.08);
+        }
+        .winners-box-title {
+            color: var(--fr-blue);
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.45rem;
+            border-bottom: 2px solid #EEF2F8;
+        }
+        .winner-item {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.65rem 0.9rem;
+            margin-bottom: 0.55rem;
+            border-radius: 8px;
+            background: #F8FAFD;
+            border: 1px solid #E1E8F2;
+        }
+        .winner-item:last-child {
+            margin-bottom: 0;
+        }
+        .winner-rank-1 {
+            background: linear-gradient(90deg, rgba(0, 38, 84, 0.08) 0%, rgba(237, 41, 57, 0.08) 100%);
+            border: 1px solid #B8C9E2;
+        }
+        .winner-left {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: #002654;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .winner-details {
+            color: #334155;
+            font-size: 0.92rem;
+        }
+        .winner-badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background-color: #002654;
+            color: #FFFFFF;
+            margin-left: 0.35rem;
+        }
+        .winner-badge-red {
+            background-color: #ED2939;
         }
 
         /* Primary buttons */
@@ -262,8 +327,27 @@ def compute_consensus(base_url: str):
 
     leaderboard = sorted(
         verified_rows,
-        key=lambda r: (r["verified"] != "True", r.get("distance", "ZZZ"), r["uni_id"]),
+        key=lambda r: (
+            r["verified"] != "True",
+            float(r["distance"]) if r["distance"] != "" else float("inf"),
+            r["uni_id"],
+        ),
     )
+
+    top_5 = [
+        {
+            "rank": idx,
+            "uni_id": r["uni_id"],
+            "number": int(r["number"]),
+            "distance": float(r["distance"]),
+            "timestamp_utc": r["timestamp_utc"],
+            "commit": r["commit"],
+        }
+        for idx, r in enumerate(
+            [row for row in leaderboard if row["verified"] == "True"][:5],
+            start=1,
+        )
+    ]
 
     return {
         "matched_commits": sorted(
@@ -279,6 +363,7 @@ def compute_consensus(base_url: str):
         "target": target,
         "min_dist": min_dist,
         "winners": winners,
+        "top_5": top_5,
     }
 
 
@@ -312,6 +397,44 @@ def save_output_files(data):
                 f.write(f"  - {uid} with {n} (distance {d:.6f})\n")
         else:
             f.write("No valid verified reveals. Cannot compute winners.\n")
+
+
+def render_top_5_box(top_5: list):
+    """Render a styled text box highlighting the Top 5 winners."""
+    medals = {1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅", 5: "🏅"}
+    items_html = []
+    for entry in top_5:
+        rank = entry["rank"]
+        medal = medals.get(rank, "🏅")
+        uid_safe = escape(str(entry["uni_id"]))
+        ts_safe = escape(str(entry["timestamp_utc"])) or "N/A"
+        commit_short = escape(str(entry["commit"])[:12]) + "..." if entry["commit"] else "N/A"
+        highlight_cls = "winner-item winner-rank-1" if rank == 1 else "winner-item"
+
+        items_html.append(
+            f"""
+            <div class="{highlight_cls}">
+                <div class="winner-left">
+                    <span>{medal} #{rank} — {uid_safe}</span>
+                    <span class="winner-badge">Choice: {entry['number']}</span>
+                    <span class="winner-badge winner-badge-red">Distance: {entry['distance']:.4f}</span>
+                </div>
+                <div class="winner-details">
+                    Commit: <code>{commit_short}</code> &nbsp;|&nbsp; Revealed (UTC): <code>{ts_safe}</code>
+                </div>
+            </div>
+            """
+        )
+
+    st.markdown(
+        f"""
+        <div class="winners-box">
+            <div class="winners-box-title">🏆 Top 5 Winners (Closest to Target)</div>
+            {''.join(items_html)}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # --- PAGES ---
@@ -432,15 +555,11 @@ elif page == "Results":
                     c3.metric("Target (2/3 Avg)", f"{data['target']:.4f}")
                     c4.metric("Min Distance", f"{data['min_dist']:.4f}")
 
-                    winner_str = ", ".join(
-                        f"**{uid}** (number: `{n}`, distance: `{d:.4f}`)"
-                        for uid, n, d in data["winners"]
-                    )
-                    st.success(f"🥇 Winner(s): {winner_str}")
+                    render_top_5_box(data["top_5"])
                 else:
                     st.info("No valid verified reveals found yet.")
 
-                st.subheader("Leaderboard")
+                st.subheader("Full Leaderboard")
                 if data["leaderboard"]:
                     st.dataframe(pd.DataFrame(data["leaderboard"]), use_container_width=True)
                 else:
