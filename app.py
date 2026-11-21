@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Streamlit frontend for the Decentralized Beauty Contest Game.
+Streamlit frontend for the Decentralized Beauty Contest Game (French Tricolor Theme).
 Integrates commit_client.py, reveal_client.py, and merge_consensus_from_api.py.
 """
 
@@ -13,17 +13,144 @@ import commit_client as cc
 import merge_consensus_from_api as mc
 import reveal_client as rc
 
-st.set_page_config(page_title="Decentralized Beauty Contest Game", layout="wide")
-st.title("Decentralized Beauty Contest Game")
+st.set_page_config(
+    page_title="Decentralized Beauty Contest Game 🇫🇷",
+    page_icon="🇫🇷",
+    layout="wide",
+)
+
+# French Tricolor Theme Styling
+st.markdown(
+    """
+    <style>
+        :root {
+            --fr-blue: #002654;
+            --fr-white: #FFFFFF;
+            --fr-red: #ED2939;
+            --fr-bg: #F4F7FB;
+            --fr-border: #D6E0EE;
+        }
+
+        .stApp {
+            background: linear-gradient(180deg, #F7F9FC 0%, #EEF2F8 100%);
+        }
+
+        /* Tricolor header banner */
+        .tricolor-banner {
+            display: flex;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(0, 38, 84, 0.14);
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--fr-border);
+        }
+        .tricolor-stripe-blue {
+            width: 14px;
+            background-color: var(--fr-blue);
+        }
+        .tricolor-stripe-white {
+            width: 10px;
+            background-color: var(--fr-white);
+        }
+        .tricolor-stripe-red {
+            width: 14px;
+            background-color: var(--fr-red);
+        }
+        .tricolor-content {
+            flex: 1;
+            background: linear-gradient(90deg, #002654 0%, #0B3B75 55%, #8F1D2C 100%);
+            color: #FFFFFF;
+            padding: 1.15rem 1.5rem;
+        }
+        .tricolor-content h1 {
+            color: #FFFFFF !important;
+            margin: 0 !important;
+            font-size: 1.85rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.2px;
+        }
+        .tricolor-content p {
+            color: #E8EEF7 !important;
+            margin: 0.35rem 0 0 0 !important;
+            font-size: 0.98rem;
+        }
+
+        /* Section headers */
+        .phase-header {
+            border-left: 6px solid var(--fr-blue);
+            border-right: 6px solid var(--fr-red);
+            background-color: #FFFFFF;
+            padding: 0.65rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 38, 84, 0.06);
+        }
+
+        /* Metric cards */
+        div[data-testid="stMetric"] {
+            background-color: #FFFFFF;
+            border: 1px solid var(--fr-border);
+            border-top: 4px solid var(--fr-blue);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            box-shadow: 0 2px 8px rgba(0, 38, 84, 0.05);
+        }
+        div[data-testid="stMetric"]:nth-child(even) {
+            border-top-color: var(--fr-red);
+        }
+
+        /* Primary buttons */
+        .stButton > button,
+        .stFormSubmitButton > button {
+            background-color: var(--fr-blue) !important;
+            color: #FFFFFF !important;
+            border: 1px solid var(--fr-blue) !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 0.45rem 1.1rem !important;
+            transition: all 0.2s ease;
+        }
+        .stButton > button:hover,
+        .stFormSubmitButton > button:hover {
+            background-color: var(--fr-red) !important;
+            border-color: var(--fr-red) !important;
+            color: #FFFFFF !important;
+        }
+
+        /* Sidebar accent */
+        section[data-testid="stSidebar"] {
+            border-right: 4px solid var(--fr-blue);
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="tricolor-banner">
+        <div class="tricolor-stripe-blue"></div>
+        <div class="tricolor-stripe-white"></div>
+        <div class="tricolor-stripe-red"></div>
+        <div class="tricolor-content">
+            <h1>🇫🇷 Decentralized Beauty Contest Game</h1>
+            <p>Cryptographic Commit–Reveal Consensus • Target = (2/3) × Class Average</p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Sidebar configuration & navigation
-st.sidebar.header("Configuration")
+st.sidebar.markdown("### 🇫🇷 Configuration")
 api_url = st.sidebar.text_input(
     "Google Apps Script API URL (/exec)",
     value=cc.API_DEFAULT,
 ).strip()
 
 page = st.sidebar.selectbox("Phase", ["Commit", "Reveal", "Results"])
+st.sidebar.markdown("---")
+st.sidebar.caption("🔵 Bleu • ⚪ Blanc • 🔴 Rouge")
 
 
 def compute_consensus(base_url: str):
@@ -189,8 +316,11 @@ def save_output_files(data):
 
 # --- PAGES ---
 if page == "Commit":
-    st.header("Commit Phase")
-    st.write("Submit your hashed commitment before the deadline.")
+    st.markdown(
+        '<div class="phase-header"><h2 style="margin:0;color:#002654;">🔒 Commit Phase</h2>'
+        '<span style="color:#4A5568;">Submit your hashed commitment before the deadline</span></div>',
+        unsafe_allow_html=True,
+    )
 
     current = cc.now_utc()
     st.caption(f"Commit deadline (UTC): `{cc.COMMIT_DEADLINE_UTC.isoformat()}` | Current UTC: `{current.isoformat()}`")
@@ -232,8 +362,11 @@ if page == "Commit":
                     st.error(f"Network error: {exc}")
 
 elif page == "Reveal":
-    st.header("Reveal Phase")
-    st.write("Reveal your previous choice using the exact University ID, number, and nonce.")
+    st.markdown(
+        '<div class="phase-header"><h2 style="margin:0;color:#002654;">🔓 Reveal Phase</h2>'
+        '<span style="color:#4A5568;">Reveal your previous choice using the exact University ID, number, and nonce</span></div>',
+        unsafe_allow_html=True,
+    )
 
     current = rc.now_utc()
     st.caption(f"Reveal opens (UTC): `{rc.REVEAL_OPEN_UTC.isoformat()}` | Current UTC: `{current.isoformat()}`")
@@ -274,8 +407,11 @@ elif page == "Reveal":
                     st.error(f"Network error: {exc}")
 
 elif page == "Results":
-    st.header("Consensus Results")
-    st.write(f"Target factor (`k`): **{mc.K_FACTOR:.4f}** | Allowed range: **[{mc.ALLOWED_MIN}, {mc.ALLOWED_MAX}]**")
+    st.markdown(
+        '<div class="phase-header"><h2 style="margin:0;color:#002654;">🏆 Consensus Results</h2>'
+        f'<span style="color:#4A5568;">Target factor (k): <b>{mc.K_FACTOR:.4f}</b> | Allowed range: <b>[{mc.ALLOWED_MIN}, {mc.ALLOWED_MAX}]</b></span></div>',
+        unsafe_allow_html=True,
+    )
 
     save_files = st.checkbox("Also save CSV/TXT output files locally (`merged_*.csv`, `class_leaderboard.csv`, `class_results.txt`)", value=False)
 
@@ -300,7 +436,7 @@ elif page == "Results":
                         f"**{uid}** (number: `{n}`, distance: `{d:.4f}`)"
                         for uid, n, d in data["winners"]
                     )
-                    st.success(f"Winner(s): {winner_str}")
+                    st.success(f"🥇 Winner(s): {winner_str}")
                 else:
                     st.info("No valid verified reveals found yet.")
 
